@@ -1,15 +1,168 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <span>foi</span>
-  </body>
+  <link rel="icon" type="image/png" href="./images/triiibo-isologo.png">
+  <title>Triiibo</title>
+
+  <link rel="stylesheet" type="text/css" href="./style.css">
+
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+
+  <header>
+    <img src="./images/triiibo-isologo.png">
+    <nav>
+      <a class="selected">Home</a>
+      <a>Solidariedade/Parcerias</a>
+      <a>Temporada Vinhedo</a>
+      <a>Fale Conosco</a>
+      <a>Nosso Manifesto</a>
+    </nav>
+  </header>
+
+  <section id="hero-section">
+    <div>
+      <h1>ENCONTRE SUA TRIBO</h1>
+      <p>
+        Aventura, Conexão E Desenvolvimento Em Uma Experiência
+        Inesquecível Na Natureza Selvagem.
+      </p>
+      <a class="button">Descubra sua Jornada</a>
+    </div>
+  </section>
+
+  <section id="ad-section">
+    <div id="ad-section-content">
+      <h1>TEMPORADA VINHEDO/SP</h1>
+      <p>Não perca essa chance, pois as vagas são limitadas!</p>
+      <a class="button">VER DETALHES</a>
+    </div>
+    <div id="time-cards">
+      <div>
+        <span id="counter-days"></span>
+        <span>Dias</span>
+      </div>
+      <div>
+        <span id="counter-hours"></span>
+        <span>Horas</span>
+      </div>
+      <div>
+        <span id="counter-minutes"></span>
+        <span>Min</span>
+      </div>
+      <div>
+        <span id="counter-seconds"></span>
+        <span>Seg</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="about-section">
+    <img src="./images/bonfire.png">
+    <div>
+      <div id="about-section-content">
+        <h1>
+          Não somos apenas um acampamento.
+          <span>Somos uma tribo.</span>
+        </h1>
+        <p>
+          Acreditamos que o crescimento genuíno acontece fora
+          da zona de conforto. Longe das telas, de volta à
+          natureza, onde o som do vento nas árvores e o estalo
+          da fogueira substituem as notificações.
+        </p>
+      </div>
+      <div class="about-card">
+        <img src="./images/book-icon.png">
+        <div>
+          <h1>EVOLUÇÃO</h1>
+          <p>
+            Essa jornada é sobre autoconhecimento,
+            se desafiar e crescer junto.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="gallery-section">
+    <h1>A vida lá fora</h1>
+    <p>
+      Recortes de momentos reais. Nenhuma pose,
+      apenas a verdade da jornada.
+    </p>
+    <div id="gallery">
+      <div>
+        <img src="./images/example-1.png">
+        <img src="./images/example-2.png">
+      </div>
+      <div>
+        <img src="./images/example-3.png">
+        <img src="./images/example-4.png">
+      </div>
+      <div>
+        <img src="./images/example-5.png">
+        <img src="./images/example-6.png">
+      </div>
+    </div>
+  </section>
+
+  <section id="partners-section">
+    <h1>Quem nos apoia</h1>
+    <p>
+      Juntos, estamos semeando oportunidades,
+      cultivando impacto e colhendo transformação social
+    </p>
+    <div>
+      <img>
+      <img>
+      <img>
+      <img>
+      <img>
+      <img>
+      <img>
+      <img>
+    </div>
+  </section>
+
+  <section id="contact-section">
+    <div>
+      <div id="contact-section-content">
+        <h1>Pronto para a sua próxima aventura?</h1>
+        <p>
+          Nossa equipe está pronta para tirar
+          todas as suas dúvidas. Mande uma
+          mensagem ou chame no WhatsApp.
+        </p>
+      </div>
+      <div class="contact-card">
+        <img src="./images/email-icon.png">
+        <div>
+          <h1>E-mail</h1>
+          <span>contato@triiibo.com.br</span>
+        </div>
+      </div>
+      <div class="contact-card">
+        <img src="./images/phone-icon.png">
+        <div>
+          <h1>Telefone</h1>
+          <span>19-99939-2105</span>
+        </div>
+      </div>
+    </div>
+    <!-- <div>
+      <h1>Envie uma mensagem</h1>
+      <label>Nome completo:</label>
+      <input>
+    </div> -->
+  </section>
+
+  <script src="./script.js"></script>
+
+</body>
 </html>
