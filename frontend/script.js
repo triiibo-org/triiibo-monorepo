@@ -1,4 +1,4 @@
-const deadline = new Date("2026-10-14T23:59:59");
+const deadline = new Date("2027-01-01T00:00:00");
 
 const counterDays = document.getElementById("counter-days");
 const counterHours = document.getElementById("counter-hours");
