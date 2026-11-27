@@ -5,6 +5,8 @@ SET time_zone = "+00:00";
 --
 -- Banco de dados: `triiibo`
 --
+
+DROP DATABASE IF EXISTS `triiibo`;
 CREATE DATABASE IF NOT EXISTS `triiibo` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `triiibo`;
 
@@ -900,33 +902,20 @@ INSERT INTO `programacao` (`id`, `edicao_id`, `dia`, `hora_inicio`, `titulo`, `d
 -- Dados para a tabela `transacao`
 --
 INSERT INTO `transacao` (`id`, `metodo`, `parcelas`, `valor`, `status`, `gateway`, `gateway_transacao_id`) VALUES
-('e1000000-0000-4000-8000-000000000001', 'cartao_credito', 5, 1100.0, 'aprovada', 'stripe', 'pi_3Q00000000000001'),
-('e1000000-0000-4000-8000-000000000002', 'pix', 1, 1100.0, 'aprovada', 'stripe', 'pi_3Q00000000000002'),
-('e1000000-0000-4000-8000-000000000003', 'boleto', 1, 1000.0, 'aprovada', 'stripe', 'pi_3Q00000000000003'),
-('e1000000-0000-4000-8000-000000000004', 'cartao_credito', 3, 1100.0, 'estornada', 'stripe', 'pi_3Q00000000000004'),
-('e1000000-0000-4000-8000-000000000005', 'pix', 1, 1100.0, 'aprovada', 'stripe', 'pi_3Q00000000000005'),
-('e1000000-0000-4000-8000-000000000006', 'cartao_credito', 6, 1200.0, 'aprovada', 'stripe', 'pi_3Q00000000000006'),
-('e1000000-0000-4000-8000-000000000007', 'cartao_debito', 1, 1200.0, 'recusada', 'stripe', 'pi_3Q00000000000007'),
-('e1000000-0000-4000-8000-000000000008', 'pix', 1, 1200.0, 'aprovada', 'stripe', 'pi_3Q00000000000008'),
-('e1000000-0000-4000-8000-000000000009', 'boleto', 1, 1200.0, 'pendente', 'stripe', 'pi_3Q00000000000009'),
-('e1000000-0000-4000-8000-000000000010', 'pix', 1, 100.0, 'aprovada', 'stripe', 'pi_3Q00000000000010'),
-('e1000000-0000-4000-8000-000000000011', 'pix', 1, 2500.0, 'aprovada', 'stripe', 'pi_3Q00000000000011'),
-('e1000000-0000-4000-8000-000000000012', 'cartao_credito', 1, 50.0, 'aprovada', 'stripe', 'pi_3Q00000000000012'),
-('e1000000-0000-4000-8000-000000000013', 'cartao_credito', 3, 1000.0, 'aprovada', 'stripe', 'pi_3Q00000000000013'),
-('e1000000-0000-4000-8000-000000000014', 'pix', 1, 200.0, 'pendente', 'stripe', 'pi_3Q00000000000014');
-
---
--- Dados para a tabela `gateway_evento`
---
-INSERT INTO `gateway_evento` (`id`, `transacao_id`, `evento_externo_id`, `tipo`, `payload`, `processado_em`) VALUES
-('e3000000-0000-4000-8000-000000000001', 'e1000000-0000-4000-8000-000000000001', 'evt_3Q00000000000001', 'criada', '{"id": "evt_3Q00000000000001", "object": "event", "type": "payment_intent.created", "data": {"object": {"id": "pi_3Q00000000000001", "object": "payment_intent", "amount": 110000, "currency": "brl", "status": "requires_payment_method"}}}', '2026-03-12 10:21:00'),
-('e3000000-0000-4000-8000-000000000002', 'e1000000-0000-4000-8000-000000000001', 'evt_3Q00000000000002', 'aprovada', '{"id": "evt_3Q00000000000002", "object": "event", "type": "payment_intent.succeeded", "data": {"object": {"id": "pi_3Q00000000000001", "object": "payment_intent", "amount": 110000, "currency": "brl", "status": "succeeded"}}}', '2026-03-12 10:21:05'),
-('e3000000-0000-4000-8000-000000000003', 'e1000000-0000-4000-8000-000000000002', 'evt_3Q00000000000003', 'aprovada', '{"id": "evt_3Q00000000000003", "object": "event", "type": "payment_intent.succeeded", "data": {"object": {"id": "pi_3Q00000000000002", "object": "payment_intent", "amount": 110000, "currency": "brl", "status": "succeeded"}}}', '2026-03-20 16:50:00'),
-('e3000000-0000-4000-8000-000000000004', 'e1000000-0000-4000-8000-000000000004', 'evt_3Q00000000000004', 'aprovada', '{"id": "evt_3Q00000000000004", "object": "event", "type": "payment_intent.succeeded", "data": {"object": {"id": "pi_3Q00000000000004", "object": "payment_intent", "amount": 110000, "currency": "brl", "status": "succeeded"}}}', '2026-04-02 09:00:00'),
-('e3000000-0000-4000-8000-000000000005', 'e1000000-0000-4000-8000-000000000004', 'evt_3Q00000000000005', 'estornada', '{"id": "evt_3Q00000000000005", "object": "event", "type": "charge.refunded", "data": {"object": {"id": "ch_3Q00000000000004", "object": "charge", "payment_intent": "pi_3Q00000000000004", "amount": 110000, "amount_refunded": 110000, "currency": "brl", "refunded": true}}}', '2026-04-10 15:30:00'),
-('e3000000-0000-4000-8000-000000000006', 'e1000000-0000-4000-8000-000000000007', 'evt_3Q00000000000006', 'recusada', '{"id": "evt_3Q00000000000006", "object": "event", "type": "payment_intent.payment_failed", "data": {"object": {"id": "pi_3Q00000000000007", "object": "payment_intent", "amount": 120000, "currency": "brl", "status": "requires_payment_method", "last_payment_error": {"code": "card_declined"}}}}', '2026-10-02 11:06:00'),
-('e3000000-0000-4000-8000-000000000007', 'e1000000-0000-4000-8000-000000000009', 'evt_3Q00000000000007', 'criada', '{"id": "evt_3Q00000000000007", "object": "event", "type": "payment_intent.requires_action", "data": {"object": {"id": "pi_3Q00000000000009", "object": "payment_intent", "amount": 120000, "currency": "brl", "status": "requires_action"}}}', NULL),
-('e3000000-0000-4000-8000-000000000008', 'e1000000-0000-4000-8000-000000000008', 'evt_3Q00000000000008', 'aprovada', '{"id": "evt_3Q00000000000008", "object": "event", "type": "payment_intent.succeeded", "data": {"object": {"id": "pi_3Q00000000000008", "object": "payment_intent", "amount": 120000, "currency": "brl", "status": "succeeded"}}}', '2026-10-02 11:10:00');
+('e1000000-0000-4000-8000-000000000001', 'cartao_credito', 5, 1100.0, 'aprovada', 'stripe', 'pi_000001'),
+('e1000000-0000-4000-8000-000000000002', 'pix', 1, 1100.0, 'aprovada', 'stripe', 'pi_000002'),
+('e1000000-0000-4000-8000-000000000003', 'boleto', 1, 1000.0, 'aprovada', 'stripe', 'pi_000003'),
+('e1000000-0000-4000-8000-000000000004', 'cartao_credito', 3, 1100.0, 'estornada', 'stripe', 'pi_000004'),
+('e1000000-0000-4000-8000-000000000005', 'pix', 1, 1100.0, 'aprovada', 'stripe', 'pi_000005'),
+('e1000000-0000-4000-8000-000000000006', 'cartao_credito', 6, 1200.0, 'aprovada', 'stripe', 'pi_000006'),
+('e1000000-0000-4000-8000-000000000007', 'cartao_debito', 1, 1200.0, 'recusada', 'stripe', 'pi_000007'),
+('e1000000-0000-4000-8000-000000000008', 'pix', 1, 1200.0, 'aprovada', 'stripe', 'pi_000008'),
+('e1000000-0000-4000-8000-000000000009', 'boleto', 1, 1200.0, 'pendente', 'stripe', 'pi_000009'),
+('e1000000-0000-4000-8000-000000000010', 'pix', 1, 100.0, 'aprovada', 'stripe', 'pi_000010'),
+('e1000000-0000-4000-8000-000000000011', 'pix', 1, 2500.0, 'aprovada', 'stripe', 'pi_000011'),
+('e1000000-0000-4000-8000-000000000012', 'cartao_credito', 1, 50.0, 'aprovada', 'stripe', 'pi_000012'),
+('e1000000-0000-4000-8000-000000000013', 'cartao_credito', 3, 1000.0, 'aprovada', 'stripe', 'pi_000013'),
+('e1000000-0000-4000-8000-000000000014', 'pix', 1, 200.0, 'pendente', 'stripe', 'pi_000014');
 
 --
 -- Dados para a tabela `pagamento_inscricao`
@@ -956,14 +945,14 @@ INSERT INTO `doacao` (`id`, `stakeholder_id`, `transacao_id`, `edicao_id`, `anon
 -- Dados para a tabela `gateway_evento`
 --
 INSERT INTO `gateway_evento` (`id`, `transacao_id`, `evento_externo_id`, `tipo`, `payload`, `processado_em`) VALUES
-('e3000000-0000-4000-8000-000000000001', 'e1000000-0000-4000-8000-000000000001', 'evt_0001', 'criada', '{"id": "pg_ch_000001", "status": "pending", "amount": 110000}', '2026-03-12 10:21:00'),
-('e3000000-0000-4000-8000-000000000002', 'e1000000-0000-4000-8000-000000000001', 'evt_0002', 'aprovada', '{"id": "pg_ch_000001", "status": "paid", "amount": 110000}', '2026-03-12 10:21:05'),
-('e3000000-0000-4000-8000-000000000003', 'e1000000-0000-4000-8000-000000000002', 'evt_0003', 'aprovada', '{"id": "pg_ch_000002", "status": "paid", "amount": 110000}', '2026-03-20 16:50:00'),
-('e3000000-0000-4000-8000-000000000004', 'e1000000-0000-4000-8000-000000000004', 'evt_0004', 'aprovada', '{"id": "pg_ch_000004", "status": "paid", "amount": 110000}', '2026-04-02 09:00:00'),
-('e3000000-0000-4000-8000-000000000005', 'e1000000-0000-4000-8000-000000000004', 'evt_0005', 'estornada', '{"id": "pg_ch_000004", "status": "refunded", "amount": 110000}', '2026-04-10 15:30:00'),
-('e3000000-0000-4000-8000-000000000006', 'e1000000-0000-4000-8000-000000000007', 'evt_0006', 'recusada', '{"id": "pg_ch_000007", "status": "refused", "amount": 120000}', '2026-10-02 11:06:00'),
-('e3000000-0000-4000-8000-000000000007', 'e1000000-0000-4000-8000-000000000009', 'evt_0007', 'criada', '{"id": "mp_900009", "status": "pending", "amount": 120000}', NULL),
-('e3000000-0000-4000-8000-000000000008', 'e1000000-0000-4000-8000-000000000008', 'evt_0008', 'aprovada', '{"id": "pg_ch_000008", "status": "paid", "amount": 120000}', '2026-10-02 11:10:00');
+('e3000000-0000-4000-8000-000000000001', 'e1000000-0000-4000-8000-000000000001', 'evt_0001', 'criada', '{"id": "evt_0001", "type": "payment_intent.created", "data": {"object": {"id": "pi_000001", "object": "payment_intent", "amount": 110000, "currency": "brl", "status": "requires_payment_method"}}}', '2026-03-12 10:21:00'),
+('e3000000-0000-4000-8000-000000000002', 'e1000000-0000-4000-8000-000000000001', 'evt_0002', 'aprovada', '{"id": "evt_0002", "type": "payment_intent.succeeded", "data": {"object": {"id": "pi_000001", "object": "payment_intent", "amount": 110000, "currency": "brl", "status": "succeeded"}}}', '2026-03-12 10:21:05'),
+('e3000000-0000-4000-8000-000000000003', 'e1000000-0000-4000-8000-000000000002', 'evt_0003', 'aprovada', '{"id": "evt_0003", "type": "payment_intent.succeeded", "data": {"object": {"id": "pi_000002", "object": "payment_intent", "amount": 110000, "currency": "brl", "status": "succeeded"}}}', '2026-03-20 16:50:00'),
+('e3000000-0000-4000-8000-000000000004', 'e1000000-0000-4000-8000-000000000004', 'evt_0004', 'aprovada', '{"id": "evt_0004", "type": "payment_intent.succeeded", "data": {"object": {"id": "pi_000004", "object": "payment_intent", "amount": 110000, "currency": "brl", "status": "succeeded"}}}', '2026-04-02 09:00:00'),
+('e3000000-0000-4000-8000-000000000005', 'e1000000-0000-4000-8000-000000000004', 'evt_0005', 'estornada', '{"id": "evt_0005", "type": "charge.refunded", "data": {"object": {"id": "ch_000004", "object": "charge", "payment_intent": "pi_000004", "amount": 110000, "amount_refunded": 110000, "currency": "brl", "refunded": true}}}', '2026-04-10 15:30:00'),
+('e3000000-0000-4000-8000-000000000006', 'e1000000-0000-4000-8000-000000000007', 'evt_0006', 'recusada', '{"id": "evt_0006", "type": "payment_intent.payment_failed", "data": {"object": {"id": "pi_000007", "object": "payment_intent", "amount": 120000, "currency": "brl", "status": "requires_payment_method"}}}', '2026-10-02 11:06:00'),
+('e3000000-0000-4000-8000-000000000007', 'e1000000-0000-4000-8000-000000000009', 'evt_0007', 'criada', '{"id": "evt_0007", "type": "payment_intent.created", "data": {"object": {"id": "pi_000009", "object": "payment_intent", "amount": 120000, "currency": "brl", "status": "requires_action"}}}', NULL),
+('e3000000-0000-4000-8000-000000000008', 'e1000000-0000-4000-8000-000000000008', 'evt_0008', 'aprovada', '{"id": "evt_0008", "type": "payment_intent.succeeded", "data": {"object": {"id": "pi_000008", "object": "payment_intent", "amount": 120000, "currency": "brl", "status": "succeeded"}}}', '2026-10-02 11:10:00');
 
 -- --------------------------------------------------------
 -- D. Comunicação e LGPD
