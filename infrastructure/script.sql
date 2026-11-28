@@ -1,5 +1,6 @@
 -- DDL do projeto Triiibo (gerado a partir de docs/DATA_STRUCT_MAP.md)
 
+SET NAMES utf8mb4;
 SET time_zone = "+00:00";
 
 --
@@ -57,11 +58,27 @@ CREATE TABLE `log_auditoria` (
 -- --------------------------------------------------------
 
 --
+-- Estrutura para tabela `usuario`
+--
+
+CREATE TABLE `usuario` (
+  `id` CHAR(36) NOT NULL DEFAULT (UUID()),
+  `nome` VARCHAR(150) NOT NULL,
+  `email` VARCHAR(255) NOT NULL,
+  `telefone` VARCHAR(20) DEFAULT NULL,
+  `data_cadastro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `data_atualizacao` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_usuario_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
 -- Estrutura para tabela `endereco`
 --
 
 CREATE TABLE `endereco` (
   `id` CHAR(36) NOT NULL DEFAULT (UUID()),
+  `id_usuario` CHAR(36) NOT NULL,
   `cep` CHAR(8) NOT NULL,
   `logradouro` VARCHAR(255) NOT NULL,
   `numero` VARCHAR(20) DEFAULT NULL,
@@ -72,25 +89,9 @@ CREATE TABLE `endereco` (
   `data_cadastro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `data_atualizacao` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_endereco_cep` (`cep`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Estrutura para tabela `usuario`
---
-
-CREATE TABLE `usuario` (
-  `id` CHAR(36) NOT NULL DEFAULT (UUID()),
-  `nome` VARCHAR(150) NOT NULL,
-  `email` VARCHAR(255) NOT NULL,
-  `telefone` VARCHAR(20) DEFAULT NULL,
-  `endereco_id` CHAR(36) DEFAULT NULL,
-  `data_cadastro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `data_atualizacao` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_usuario_email` (`email`),
-  KEY `idx_usuario_endereco` (`endereco_id`),
-  CONSTRAINT `fk_usuario_endereco` FOREIGN KEY (`endereco_id`) REFERENCES `endereco` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  KEY `idx_endereco_cep` (`cep`),
+  KEY `idx_endereco_usuario` (`id_usuario`),
+  CONSTRAINT `fk_endereco_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -241,7 +242,9 @@ CREATE TABLE `edicao` (
   `status` ENUM('rascunho','inscricoes_abertas','inscricoes_encerradas','em_andamento','finalizada','cancelada') NOT NULL DEFAULT 'rascunho',
   `data_cadastro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `data_atualizacao` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `chk_edicao_datas` CHECK (`data_fim` >= `data_inicio`),
+  CONSTRAINT `chk_edicao_valor` CHECK (`valor` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -281,6 +284,7 @@ CREATE TABLE `inscricao` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_inscricao_participante_edicao` (`participante_id`, `edicao_id`),
   KEY `idx_inscricao_edicao` (`edicao_id`),
+  KEY `idx_inscricao_status` (`status`),
   KEY `idx_inscricao_responsavel_participante` (`responsavel_id`, `participante_id`),
   CONSTRAINT `fk_inscricao_edicao` FOREIGN KEY (`edicao_id`) REFERENCES `edicao` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_inscricao_responsavel_participante` FOREIGN KEY (`responsavel_id`, `participante_id`) REFERENCES `responsavel_participante` (`responsavel_id`, `participante_id`) ON DELETE RESTRICT ON UPDATE CASCADE
@@ -302,7 +306,8 @@ CREATE TABLE `ficha_medica` (
   KEY `idx_ficha_inscricao` (`inscricao_id`),
   KEY `idx_ficha_validada_por` (`validada_por`),
   CONSTRAINT `fk_ficha_inscricao` FOREIGN KEY (`inscricao_id`) REFERENCES `inscricao` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_ficha_validada_por` FOREIGN KEY (`validada_por`) REFERENCES `admin` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `fk_ficha_validada_por` FOREIGN KEY (`validada_por`) REFERENCES `admin` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `chk_ficha_validacao` CHECK ((`validada_em` IS NULL AND `validada_por` IS NULL) OR (`validada_em` IS NOT NULL AND `validada_por` IS NOT NULL))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -359,7 +364,9 @@ CREATE TABLE `transacao` (
   `data_cadastro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `data_atualizacao` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_transacao_gateway_id` (`gateway_transacao_id`)
+  UNIQUE KEY `uq_transacao_gateway_id` (`gateway_transacao_id`),
+  CONSTRAINT `chk_transacao_parcelas` CHECK (`parcelas` >= 1),
+  CONSTRAINT `chk_transacao_valor` CHECK (`valor` > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -643,8 +650,6 @@ END$$
 
 DELIMITER ;
 
--- SET NAMES utf8mb4;
-
 START TRANSACTION;
 
 -- --------------------------------------------------------
@@ -677,37 +682,41 @@ INSERT INTO `log_auditoria` (`id`, `admin_id`, `acao`, `entidade`, `entidade_id`
 -- --------------------------------------------------------
 
 --
--- Dados para a tabela `endereco`
---
-INSERT INTO `endereco` (`id`, `cep`, `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `estado`) VALUES
-('b1000000-0000-4000-8000-000000000001', '13170000', 'Rua das Acácias', '120', NULL, 'Jardim Primavera', 'Sumaré', 'SP'),
-('b1000000-0000-4000-8000-000000000002', '13171110', 'Avenida Brasil', '455', 'Apto 32', 'Centro', 'Sumaré', 'SP'),
-('b1000000-0000-4000-8000-000000000003', '13015904', 'Rua Barão de Jaguara', '1010', 'Sala 5', 'Centro', 'Campinas', 'SP'),
-('b1000000-0000-4000-8000-000000000004', '01310100', 'Avenida Paulista', '900', 'Conj. 71', 'Bela Vista', 'São Paulo', 'SP'),
-('b1000000-0000-4000-8000-000000000005', '13060000', 'Rua Doutor Quirino', '88', NULL, 'Cambuí', 'Campinas', 'SP'),
-('b1000000-0000-4000-8000-000000000006', '20040020', 'Rua da Assembleia', '50', 'Andar 3', 'Centro', 'Rio de Janeiro', 'RJ'),
-('b1000000-0000-4000-8000-000000000007', '30130010', 'Avenida Afonso Pena', '2000', NULL, 'Funcionários', 'Belo Horizonte', 'MG'),
-('b1000000-0000-4000-8000-000000000008', '80010000', 'Rua XV de Novembro', '300', 'Loja 2', 'Centro', 'Curitiba', 'PR');
-
---
 -- Dados para a tabela `usuario`
 --
-INSERT INTO `usuario` (`id`, `nome`, `email`, `telefone`, `endereco_id`) VALUES
-('b2000000-0000-4000-8000-000000000001', 'Ana Paula Almeida', 'ana.almeida@example.com', '(19) 99101-0001', 'b1000000-0000-4000-8000-000000000001'),
-('b2000000-0000-4000-8000-000000000002', 'Carlos Eduardo Costa', 'carlos.costa@example.com', '(19) 99101-0002', 'b1000000-0000-4000-8000-000000000002'),
-('b2000000-0000-4000-8000-000000000003', 'Helena Souza', 'helena.souza@example.com', '(19) 99101-0003', 'b1000000-0000-4000-8000-000000000003'),
-('b2000000-0000-4000-8000-000000000004', 'Juliana Ferreira', 'juliana.ferreira@example.com', '(11) 99101-0004', 'b1000000-0000-4000-8000-000000000004'),
-('b2000000-0000-4000-8000-000000000005', 'Roberto Oliveira', 'roberto.oliveira@example.com', '(19) 99101-0005', 'b1000000-0000-4000-8000-000000000005'),
-('b2000000-0000-4000-8000-000000000006', 'Fernando Barbosa', 'fernando.barbosa@example.com', '(21) 99202-0006', 'b1000000-0000-4000-8000-000000000006'),
-('b2000000-0000-4000-8000-000000000007', 'Camila Duarte', 'camila.duarte@example.com', '(31) 99202-0007', 'b1000000-0000-4000-8000-000000000007'),
-('b2000000-0000-4000-8000-000000000008', 'Marcos Teixeira', 'marcos.teixeira@example.com', '(19) 99202-0008', NULL),
-('b2000000-0000-4000-8000-000000000009', 'Patrícia Nogueira', 'patricia.nogueira@example.com', NULL, NULL),
-('b2000000-0000-4000-8000-000000000010', 'Ricardo Menezes', 'ricardo.menezes@example.com', '(41) 99202-0010', 'b1000000-0000-4000-8000-000000000008'),
-('b2000000-0000-4000-8000-000000000011', 'Instituto Futuro Jovem', 'contato@futurojovem.example.com', '(11) 3000-0011', 'b1000000-0000-4000-8000-000000000003'),
-('b2000000-0000-4000-8000-000000000012', 'Livraria Saber', 'contato@livrariasaber.example.com', '(19) 3000-0012', 'b1000000-0000-4000-8000-000000000005'),
-('b2000000-0000-4000-8000-000000000013', 'Mercado Bom Preço', 'contato@bompreco.example.com', '(19) 3000-0013', 'b1000000-0000-4000-8000-000000000002'),
-('b2000000-0000-4000-8000-000000000014', 'Studio Fit Academia', 'contato@studiofit.example.com', '(19) 3000-0014', 'b1000000-0000-4000-8000-000000000001'),
-('b2000000-0000-4000-8000-000000000015', 'Cooperativa Vale Verde', 'contato@valeverde.example.com', NULL, NULL);
+INSERT INTO `usuario` (`id`, `nome`, `email`, `telefone`) VALUES
+('b2000000-0000-4000-8000-000000000001', 'Ana Paula Almeida', 'ana.almeida@example.com', '(19) 99101-0001'),
+('b2000000-0000-4000-8000-000000000002', 'Carlos Eduardo Costa', 'carlos.costa@example.com', '(19) 99101-0002'),
+('b2000000-0000-4000-8000-000000000003', 'Helena Souza', 'helena.souza@example.com', '(19) 99101-0003'),
+('b2000000-0000-4000-8000-000000000004', 'Juliana Ferreira', 'juliana.ferreira@example.com', '(11) 99101-0004'),
+('b2000000-0000-4000-8000-000000000005', 'Roberto Oliveira', 'roberto.oliveira@example.com', '(19) 99101-0005'),
+('b2000000-0000-4000-8000-000000000006', 'Fernando Barbosa', 'fernando.barbosa@example.com', '(21) 99202-0006'),
+('b2000000-0000-4000-8000-000000000007', 'Camila Duarte', 'camila.duarte@example.com', '(31) 99202-0007'),
+('b2000000-0000-4000-8000-000000000008', 'Marcos Teixeira', 'marcos.teixeira@example.com', '(19) 99202-0008'),
+('b2000000-0000-4000-8000-000000000009', 'Patrícia Nogueira', 'patricia.nogueira@example.com', NULL),
+('b2000000-0000-4000-8000-000000000010', 'Ricardo Menezes', 'ricardo.menezes@example.com', '(41) 99202-0010'),
+('b2000000-0000-4000-8000-000000000011', 'Instituto Futuro Jovem', 'contato@futurojovem.example.com', '(11) 3000-0011'),
+('b2000000-0000-4000-8000-000000000012', 'Livraria Saber', 'contato@livrariasaber.example.com', '(19) 3000-0012'),
+('b2000000-0000-4000-8000-000000000013', 'Mercado Bom Preço', 'contato@bompreco.example.com', '(19) 3000-0013'),
+('b2000000-0000-4000-8000-000000000014', 'Studio Fit Academia', 'contato@studiofit.example.com', '(19) 3000-0014'),
+('b2000000-0000-4000-8000-000000000015', 'Cooperativa Vale Verde', 'contato@valeverde.example.com', NULL);
+
+--
+-- Dados para a tabela `endereco`
+--
+INSERT INTO `endereco` (`id`, `id_usuario`, `cep`, `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `estado`) VALUES
+('b1000000-0000-4000-8000-000000000001', 'b2000000-0000-4000-8000-000000000001', '13170000', 'Rua das Acácias', '120', NULL, 'Jardim Primavera', 'Sumaré', 'SP'),
+('b1000000-0000-4000-8000-000000000002', 'b2000000-0000-4000-8000-000000000002', '13171110', 'Avenida Brasil', '455', 'Apto 32', 'Centro', 'Sumaré', 'SP'),
+('b1000000-0000-4000-8000-000000000003', 'b2000000-0000-4000-8000-000000000003', '13015904', 'Rua Barão de Jaguara', '1010', 'Sala 5', 'Centro', 'Campinas', 'SP'),
+('b1000000-0000-4000-8000-000000000004', 'b2000000-0000-4000-8000-000000000004', '01310100', 'Avenida Paulista', '900', 'Conj. 71', 'Bela Vista', 'São Paulo', 'SP'),
+('b1000000-0000-4000-8000-000000000005', 'b2000000-0000-4000-8000-000000000005', '13060000', 'Rua Doutor Quirino', '88', NULL, 'Cambuí', 'Campinas', 'SP'),
+('b1000000-0000-4000-8000-000000000006', 'b2000000-0000-4000-8000-000000000006', '20040020', 'Rua da Assembleia', '50', 'Andar 3', 'Centro', 'Rio de Janeiro', 'RJ'),
+('b1000000-0000-4000-8000-000000000007', 'b2000000-0000-4000-8000-000000000007', '30130010', 'Avenida Afonso Pena', '2000', NULL, 'Funcionários', 'Belo Horizonte', 'MG'),
+('b1000000-0000-4000-8000-000000000008', 'b2000000-0000-4000-8000-000000000010', '80010000', 'Rua XV de Novembro', '300', 'Loja 2', 'Centro', 'Curitiba', 'PR'),
+('b1000000-0000-4000-8000-000000000009', 'b2000000-0000-4000-8000-000000000011', '13015904', 'Rua Barão de Jaguara', '1010', 'Sala 5', 'Centro', 'Campinas', 'SP'),
+('b1000000-0000-4000-8000-000000000010', 'b2000000-0000-4000-8000-000000000012', '13060000', 'Rua Doutor Quirino', '88', NULL, 'Cambuí', 'Campinas', 'SP'),
+('b1000000-0000-4000-8000-000000000011', 'b2000000-0000-4000-8000-000000000013', '13171110', 'Avenida Brasil', '455', 'Apto 32', 'Centro', 'Sumaré', 'SP'),
+('b1000000-0000-4000-8000-000000000012', 'b2000000-0000-4000-8000-000000000014', '13170000', 'Rua das Acácias', '120', NULL, 'Jardim Primavera', 'Sumaré', 'SP');
 
 --
 -- Dados para a tabela `responsavel`
@@ -1072,11 +1081,11 @@ INSERT INTO `faq` (`id`, `pergunta`, `resposta`, `ordem`, `ativo`) VALUES
 -- Dados para a tabela `rede_social`
 --
 INSERT INTO `rede_social` (`id`, `nome`, `url`, `ordem`, `ativo`) VALUES
-('95000000-0000-4000-8000-000000000001', 'Facebook', 'https://facebook.com/exemplo', 2, 1),
-('95000000-0000-4000-8000-000000000002', 'YouTube', 'https://youtube.com/@exemplo', 3, 1),
-('95000000-0000-4000-8000-000000000003', 'LinkedIn', 'https://linkedin.com/company/exemplo', 4, 1),
-('95000000-0000-4000-8000-000000000004', 'WhatsApp', 'https://wa.me/5519991010001', 5, 1),
-('95000000-0000-4000-8000-000000000005', 'Instagram', 'https://instagram.com/@exemplo', 6, 0);
+('95000000-0000-4000-8000-000000000001', 'Facebook', 'https://facebook.com/exemplo', 1, 1),
+('95000000-0000-4000-8000-000000000002', 'YouTube', 'https://youtube.com/@exemplo', 2, 1),
+('95000000-0000-4000-8000-000000000003', 'LinkedIn', 'https://linkedin.com/company/exemplo', 3, 1),
+('95000000-0000-4000-8000-000000000004', 'WhatsApp', 'https://wa.me/5519991010001', 4, 1),
+('95000000-0000-4000-8000-000000000005', 'Instagram', 'https://instagram.com/@exemplo', 5, 0);
 
 COMMIT;
 
@@ -1149,3 +1158,146 @@ UNION ALL
 SELECT 'faq' AS tabela, COUNT(*) AS total FROM `faq`
 UNION ALL
 SELECT 'rede_social' AS tabela, COUNT(*) AS total FROM `rede_social`;
+
+-- Queries
+
+SELECT
+  u.id,
+  u.nome,
+  u.email,
+  e.cidade,
+  e.estado
+FROM usuario u
+LEFT JOIN endereco e ON e.id_usuario = u.id
+ORDER BY u.nome ASC;
+
+SELECT
+  id,
+  nome,
+  data_inicio,
+  data_fim,
+  vagas_totais,
+  status
+FROM edicao
+ORDER BY data_inicio DESC, data_cadastro DESC;
+
+SELECT
+  id,
+  metodo,
+  parcelas,
+  valor,
+  status
+FROM transacao
+WHERE metodo = 'pix'
+ORDER BY data_cadastro DESC;
+
+SELECT
+  p.id AS participante_id,
+  p.nome AS participante,
+  rp.parentesco,
+  CASE WHEN rp.guardiao_legal = 1 THEN 'Sim' ELSE 'Não' END AS guardiao_legal,
+  u.id AS responsavel_id,
+  u.nome AS responsavel,
+  r.cpf AS cpf_responsavel,
+  u.email AS email_responsavel
+FROM participante p
+JOIN responsavel_participante rp ON rp.participante_id = p.id
+JOIN responsavel r ON r.usuario_id = rp.responsavel_id
+JOIN usuario u ON u.id = r.usuario_id
+ORDER BY p.nome ASC, u.nome ASC;
+
+SELECT
+  e.id AS edicao_id,
+  e.nome AS edicao,
+  e.status,
+  COALESCE(SUM(t_insc.valor), 0.00) AS total_inscricoes,
+  COALESCE(SUM(t_doa.valor), 0.00) AS total_doacoes,
+  COALESCE(SUM(t_insc.valor), 0.00) + COALESCE(SUM(t_doa.valor), 0.00) AS total_arrecadado
+FROM edicao e
+LEFT JOIN inscricao i ON i.edicao_id = e.id
+LEFT JOIN pagamento_inscricao pi ON pi.inscricao_id = i.id
+LEFT JOIN transacao t_insc ON t_insc.id = pi.transacao_id AND t_insc.status = 'aprovada'
+LEFT JOIN doacao d ON d.edicao_id = e.id
+LEFT JOIN transacao t_doa ON t_doa.id = d.transacao_id AND t_doa.status = 'aprovada'
+GROUP BY e.id, e.nome, e.status
+ORDER BY total_arrecadado DESC, e.data_inicio DESC;
+
+SELECT
+  la.id AS log_id,
+  la.acao,
+  la.entidade,
+  la.dados_antes,
+  la.dados_depois,
+  la.ip,
+  la.data_cadastro AS data_hora_evento,
+  COALESCE(a.nome, 'Sistema / Admin removido') AS admin_nome,
+  a.email AS admin_email,
+  a.perfil AS admin_perfil
+FROM log_auditoria la
+LEFT JOIN admin a ON a.id = la.admin_id
+ORDER BY la.data_cadastro DESC;
+
+SELECT
+  COALESCE(e.nome, 'TOTAL GERAL') AS edicao,
+  COUNT(i.id) AS total_inscricoes_confirmadas
+FROM edicao e
+LEFT JOIN inscricao i
+  ON i.edicao_id = e.id
+  AND i.status = 'confirmada'
+GROUP BY e.nome WITH ROLLUP;
+
+SELECT
+  p.id AS participante_id,
+  p.nome AS participante,
+  e.nome AS edicao,
+  i.status AS status_inscricao,
+  i.tipo_vaga,
+  COALESCE(t.status, 'sem_pagamento') AS status_pagamento,
+  t.metodo AS metodo_pagamento,
+  t.valor AS valor_transacao,
+  CASE
+    WHEN fm.id IS NULL THEN 'não_enviada'
+    WHEN fm.validada_em IS NOT NULL THEN 'validada'
+    ELSE 'aguardando_validacao'
+  END AS status_ficha_medica,
+  a.nome AS ficha_validada_por
+FROM inscricao i
+JOIN participante p ON p.id = i.participante_id
+JOIN edicao e ON e.id = i.edicao_id
+LEFT JOIN pagamento_inscricao pi ON pi.inscricao_id = i.id
+LEFT JOIN transacao t ON t.id = pi.transacao_id
+LEFT JOIN ficha_medica fm ON fm.inscricao_id = i.id
+LEFT JOIN admin a ON a.id = fm.validada_por
+ORDER BY e.data_inicio DESC, p.nome ASC;
+
+SELECT
+  pa.stakeholder_id,
+  pa.nome_marca,
+  spj.razao_social,
+  spj.cnpj,
+  u.email,
+  COUNT(d.id) AS quantidade_doacoes,
+  COALESCE(SUM(CASE WHEN t.status = 'aprovada' THEN t.valor ELSE 0 END), 0.00) AS total_doado_aprovado
+FROM parceiro pa
+JOIN stakeholder_pj spj ON spj.stakeholder_id = pa.stakeholder_id
+JOIN usuario u ON u.id = pa.stakeholder_id
+JOIN doacao d ON d.stakeholder_id = pa.stakeholder_id
+JOIN transacao t ON t.id = d.transacao_id
+GROUP BY
+  pa.stakeholder_id,
+  pa.nome_marca,
+  spj.razao_social,
+  spj.cnpj,
+  u.email
+ORDER BY total_doado_aprovado DESC;
+
+SELECT
+  DATE_FORMAT(data_cadastro, '%Y-%m') AS ano_mes,
+  COUNT(*) AS total_inscricoes,
+  SUM(CASE WHEN status = 'confirmada' THEN 1 ELSE 0 END) AS confirmadas,
+  SUM(CASE WHEN status = 'pendente' THEN 1 ELSE 0 END) AS pendentes,
+  SUM(CASE WHEN status = 'lista_espera' THEN 1 ELSE 0 END) AS lista_espera,
+  SUM(CASE WHEN status = 'cancelada' THEN 1 ELSE 0 END) AS canceladas
+FROM inscricao
+GROUP BY DATE_FORMAT(data_cadastro, '%Y-%m')
+ORDER BY ano_mes DESC;
